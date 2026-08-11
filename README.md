@@ -47,10 +47,22 @@ adjusted at the top of the script if a DLC update changes the compression.
 > 571 l → 143 l, 1,120 l → 280 l; straw: 1,029 l → 258 l. Compression is a
 > constant 4.00. With the mod, 280 l of pellets yield 1,143 l of hay again.
 
-> An intake throttle (`PELLET_INTAKE_SPEED`) was tried and removed again: material
-> the mixer wagon refuses is **not** left in the heap, it is destroyed. Measured
-> at 0.5: 143 l of pellets yielded 317 l of hay instead of 572 l. The constant
-> is still in the script, but must stay at 1.0.
+## Dosing aid
+
+Because of the 4x factor a mixer wagon driving into a pellet heap fills four
+times as fast as it would in loose material. So self-propelled mixer wagons
+(Faresin PF226, Kuhn SPW Intense) pick pellets up at **half rate**
+(`PELLET_INTAKE_SPEED`, set 0.25 for exactly the loose-material feel, 1.0 to
+disable). Trailed mixer wagons have no ground pickup at all and are unaffected.
+
+This is done by lowering `shovelNode.fillLitersPerSecond` while pellets are
+being picked up — the rate at which the `Shovel` specialization strips material
+off the ground. What is not picked up stays in the heap.
+
+> Do **not** throttle by returning less from `addFillUnitFillLevel`:
+> `Shovel:onUpdateTick` discards that return value and has already removed the
+> material from the ground, so the difference is destroyed. Measured at 0.5:
+> 143 l of pellets yielded 317 l of hay instead of 572 l.
 
 Scope is deliberately narrow:
 

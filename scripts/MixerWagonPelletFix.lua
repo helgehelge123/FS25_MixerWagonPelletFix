@@ -23,10 +23,10 @@
 -- wurden zu ~3.900 l Heu statt ~1.450 l). Neutral für das Gameplay ist
 -- genau die Umkehrung der Volumenkompression.
 --
--- Zusätzlich wird die Pellet-Aufnahme in den Mischwagen gedrosselt
--- (PELLET_INTAKE_SPEED, Standard 50 %): durch den Faktor 4 füllt sich
--- der Mischwagen mit Pellets sonst sehr schnell - so lässt sich beim
--- Fahren in einen Pellet-Berg genauer dosieren.
+-- Zusätzlich nehmen selbstfahrende Mischwagen Pellets vom Boden nur mit
+-- halber Rate auf (PELLET_INTAKE_SPEED): durch den Faktor 4 füllt sich der
+-- Mischwagen im Pellet-Haufen sonst viermal so schnell wie gewohnt. Was
+-- nicht aufgenommen wird, bleibt liegen - es geht nichts verloren.
 --
 -- Es wird nur der Mischwagen angefasst; Verkauf, Einstreu und Lagerung
 -- von Pellets bleiben unverändert. Die Umwandlung läuft durch dieselbe
@@ -49,19 +49,22 @@ local CONVERSIONS = {
     { pellet = "HAY_PELLETS",   target = "DRYGRASS_WINDROW", factor = 4.0 },
 }
 
--- Drossel für die Pellet-Aufnahme: pro Tick wird nur dieser Anteil der
--- angebotenen Pellet-Liter angenommen.
+-- Dosierhilfe: Anteil der normalen Aufnahmerate, mit der ein selbstfahrender
+-- Mischwagen Pellets vom Boden aufnimmt (1,0 = keine Drossel). Durch die
+-- Umrechnung mit Faktor 4 füllt sich der Mischwagen in Pellet-Haufen sonst
+-- viermal so schnell wie gewohnt; 0,5 halbiert das, 0,25 entspricht exakt
+-- dem Tempo von losem Material.
 --
--- ACHTUNG, deshalb auf 1,0 (aus): Der nicht angenommene Rest bleibt NICHT
--- im Haufen liegen, sondern geht verloren. Die Aufnahme vom Boden räumt
--- das Material unabhängig vom Rückgabewert ab; alles, was der Mischwagen
--- nicht annimmt, ist weg. Getestet mit 0,5: 270 l Pellets ergaben 570 l
--- statt 1.080 l Heu - die Hälfte wurde vernichtet, also genau der Fehler,
--- den dieser Mod eigentlich beheben soll.
+-- Angesetzt wird an `shovelNode.fillLitersPerSecond`, also an der Rate, mit
+-- der die Shovel-Spezialisierung Material vom Boden abräumt. Das ist der
+-- einzig verlustfreie Weg: Was nicht abgeräumt wird, bleibt im Haufen
+-- liegen.
 --
--- Eine Dosierhilfe muss stattdessen an der Aufnahmerate des Mischwagens
--- ansetzen (dann wird das Material erst gar nicht vom Boden geholt).
-local PELLET_INTAKE_SPEED = 1.0
+-- Nicht über den Rückgabewert von addFillUnitFillLevel drosseln! Der wird
+-- von Shovel:onUpdateTick ignoriert, das Material ist zu dem Zeitpunkt
+-- bereits vom Boden entfernt und damit weg. Getestet: mit halber Annahme
+-- ergaben 270 l Pellets 570 l statt 1.080 l Heu.
+local PELLET_INTAKE_SPEED = 0.5
 
 local conversions = nil -- fillTypeIndex -> { targetIndex = ..., factor = ... }
 local mwpfFailed = false
@@ -136,12 +139,8 @@ local function convert(self, superFunc, fillUnitSuperFunc, farmId, fillUnitIndex
     if spec.fillUnitIndex ~= nil and spec.fillUnitIndex ~= fillUnitIndex then
         return nil
     end
-    -- Drossel: nur einen Teil der angebotenen Pellets annehmen; der
-    -- Rückgabewert meldet der Quelle die tatsächlich verbrauchte Menge,
-    -- der Rest bleibt dort liegen
-    local limitedDelta = fillLevelDelta * PELLET_INTAKE_SPEED
     local applied = superFunc(self, fillUnitSuperFunc, farmId, fillUnitIndex,
-        limitedDelta * conv.factor, conv.targetIndex, toolType, fillPositionData)
+        fillLevelDelta * conv.factor, conv.targetIndex, toolType, fillPositionData)
     -- ab hier darf nichts mehr fehlschlagen (superFunc lief bereits - ein
     -- Fehler würde im Fallback des Hooks zu doppeltem Einfüllen führen)
     if type(applied) ~= "number" then
@@ -150,10 +149,74 @@ local function convert(self, superFunc, fillUnitSuperFunc, farmId, fillUnitIndex
     return applied / conv.factor
 end
 
+-- Dosierhilfe: Aufnahmerate des Shovel-Knotens senken, solange Pellets vom
+-- Boden aufgenommen werden. getShovelNodeIsActive wird in
+-- Shovel:onUpdateTick ausgewertet, bevor das Material vom Boden geholt wird
+-- (freeCapacity = min(freeCapacity, shovelNode.fillLitersPerSecond * dt)) -
+-- eine niedrigere Rate lässt den Rest also im Haufen liegen.
+--
+-- Betrifft nur selbstfahrende Mischwagen mit Shovel-Knoten (Faresin PF226,
+-- Kuhn SPW Intense); gezogene Mischwagen können ohnehin nicht vom Boden
+-- aufnehmen. Fremde Fahrzeuge (Radlader, Bagger) bleiben unberührt, weil
+-- auf spec_mixerWagon geprüft wird.
+local function throttleShovelNode(self, superFunc, shovelNode)
+    local isActive = superFunc(self, shovelNode)
+    if PELLET_INTAKE_SPEED >= 1.0 or conversions == nil or shovelNode == nil then
+        return isActive
+    end
+    if self.spec_mixerWagon == nil then
+        return isActive
+    end
+
+    -- Ausgangsrate merken; ändert sie jemand anderes (Konfiguration, anderer
+    -- Mod), wird der neue Wert zur Basis
+    local rate = shovelNode.fillLitersPerSecond
+    if shovelNode.mwpfLastSet == nil or rate ~= shovelNode.mwpfLastSet then
+        shovelNode.mwpfBaseRate = rate
+    end
+    local base = shovelNode.mwpfBaseRate
+    if base == nil or base <= 0 or base == math.huge then
+        return isActive -- ohne konfigurierte Rate gibt es nichts zu skalieren
+    end
+
+    -- Fülltyp des laufenden Aufnahmevorgangs (Shovel setzt ihn am Ende von
+    -- onUpdateTick); im ersten Tick eines Haufens greift die Drossel daher
+    -- noch nicht - unkritisch, es geht nichts verloren
+    local spec = self.spec_shovel
+    local loadingFillType = spec ~= nil and spec.loadingFillType or nil
+
+    if isActive and loadingFillType ~= nil and conversions[loadingFillType] ~= nil then
+        shovelNode.fillLitersPerSecond = base * PELLET_INTAKE_SPEED
+    else
+        shovelNode.fillLitersPerSecond = base
+    end
+    shovelNode.mwpfLastSet = shovelNode.fillLitersPerSecond
+
+    return isActive
+end
+
 function MixerWagonPelletFix.installHooks()
     if MixerWagon == nil or MixerWagon.addFillUnitFillLevel == nil then
         Logging.warning("[%s] MixerWagon.addFillUnitFillLevel not found, mod inactive", MixerWagonPelletFix.modName)
         return
+    end
+
+    if Shovel ~= nil and Shovel.getShovelNodeIsActive ~= nil then
+        Shovel.getShovelNodeIsActive = Utils.overwrittenFunction(Shovel.getShovelNodeIsActive,
+            function(self, superFunc, shovelNode)
+                if mwpfFailed then
+                    return superFunc(self, shovelNode)
+                end
+                local ok, result = pcall(throttleShovelNode, self, superFunc, shovelNode)
+                if ok then
+                    return result
+                end
+                fail(result)
+                return superFunc(self, shovelNode)
+            end)
+    else
+        Logging.info("[%s] Shovel.getShovelNodeIsActive nicht gefunden, Dosierhilfe inaktiv",
+            MixerWagonPelletFix.modName)
     end
 
     MixerWagon.addFillUnitFillLevel = Utils.overwrittenFunction(MixerWagon.addFillUnitFillLevel,
