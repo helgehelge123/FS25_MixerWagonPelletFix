@@ -44,8 +44,9 @@ adjusted at the top of the script if a DLC update changes the compression.
 > 362 l of hay pellets became ~3,900 l of hay instead of ~1,450 l.
 >
 > The 4.0 was measured in-game across several runs — hay: 1,209 l → 302 l,
-> 571 l → 143 l, 1,120 l → 280 l; straw: 1,029 l → 258 l. Compression is a
-> constant 4.00. With the mod, 280 l of pellets yield 1,143 l of hay again.
+> 571 l → 143 l, 1,120 l → 280 l, 1,143 l → 286 l; straw: 1,029 l → 258 l.
+> Compression is a constant 4.00. With the mod the round trip is neutral:
+> 1,143 l of hay → 286 l of pellets → 1,143 l of hay back in the wagon.
 
 ## Dosing aid
 
@@ -86,6 +87,7 @@ Multiplayer: supported; install on server and clients.
 
 - Farming Simulator 25, version 1.21.1.0 (Steam, macOS)
 - Straw Harvest Pack 1.1.0.0
+- Conversion and dosing aid verified in-game with a Faresin PF226
 
 ---
 
