@@ -85,43 +85,72 @@ HAY_HI = (248, 220, 130)
 HAY_EDGE = (60, 42, 12)
 CREAM = (246, 244, 232)
 
+# ------------------------------------------------------------- Bausteine
+
+def hay_fan(cx, cy):
+    """Heu-/Strohbuendel, aufgefaechert nach oben (Fusspunkt cx, cy)."""
+    for ang, ln in ((-108, 225), (-100, 258), (-92, 285), (-84, 296),
+                    (-76, 280), (-68, 250), (-62, 215)):
+        a = math.radians(ang)
+        capsule(cx, cy, cx + math.cos(a) * ln, cy + math.sin(a) * ln,
+                13, HAY, HAY_EDGE, edge_w=4)
+    for ang, ln in ((-98, 172), (-80, 180)):
+        a = math.radians(ang)
+        capsule(cx, cy, cx + math.cos(a) * ln, cy + math.sin(a) * ln, 5, HAY_HI)
+
+
+def pellet_cluster(cx, cy):
+    """Vier gepresste Pellets - kompakter Haufen statt loser Halme.
+    Leicht gekippt und mit Luecke zwischen den Spalten, damit bei 256 px
+    vier Koerner erkennbar bleiben und nicht ein Balken entsteht."""
+    for dx0, dy0, dx1, dy1 in ((-62, -150, -44, -58), (44, -136, 60, -44),
+                               (-58, -6, -40, 86), (40, 8, 58, 100)):
+        ax, ay, bx, by = cx + dx0, cy + dy0, cx + dx1, cy + dy1
+        capsule(ax, ay, bx, by, 27, PELLET, PELLET_EDGE, edge_w=5)
+        capsule(ax - 8, ay + 20, bx - 8, by - 20, 7, PELLET_HI)
+
+
+def arrow(x0, y):
+    """Pfeil nach rechts, Gesamtlaenge 140 ab x0."""
+    capsule(x0, y, x0 + 86, y, 22, CREAM)
+    triangle([(x0 + 74, y - 56), (x0 + 74, y + 56), (x0 + 140, y)], CREAM)
+
+
+def glyph_div(cx, cy):
+    capsule(cx - 34, cy, cx + 34, cy, 10, CREAM)
+    capsule(cx, cy - 28, cx, cy - 28, 12, CREAM)
+    capsule(cx, cy + 28, cx, cy + 28, 12, CREAM)
+
+
+def glyph_times(cx, cy):
+    capsule(cx - 24, cy - 24, cx + 24, cy + 24, 11, CREAM)
+    capsule(cx + 24, cy - 24, cx - 24, cy + 24, 11, CREAM)
+
+
+def glyph_four(cx, cy):
+    capsule(cx - 33, cy + 28, cx + 11, cy - 48, 11, CREAM)   # Diagonale
+    capsule(cx - 39, cy + 28, cx + 39, cy + 28, 11, CREAM)   # Querbalken
+    capsule(cx + 17, cy - 51, cx + 17, cy + 51, 11, CREAM)   # Senkrechte
+
+
+# ------------------------------------------------------------ Komposition
+#
+# Heu -> Pellets -> Heu: der Umweg ueber die Presse ist mit dem Mod
+# verlustfrei, deshalb sind beide Buendel gleich gross. Das Pressen
+# viertelt das Volumen (:4), der Mischwagen rechnet es wieder hoch (x4).
+
 background(BG_TOP, BG_BOT)
 
-# ------------------------------------------------- links: Pellet-Cluster
-S = SS
-pellets = [
-    ((146, 470), (146, 576)),
-    ((222, 502), (222, 608)),
-    ((112, 606), (112, 712)),
-    ((190, 640), (190, 746)),
-]
-for (ax, ay), (bx, by) in pellets:
-    capsule(ax, ay, bx, by, 31, PELLET, PELLET_EDGE, edge_w=6)
-    capsule(ax - 9, ay + 17, bx - 9, by - 17, 8, PELLET_HI)
+hay_fan(124, 755)
+arrow(255, 595)
+pellet_cluster(512, 607)
+arrow(629, 595)
+hay_fan(867, 755)
 
-# ------------------------------------------------------ Mitte: Pfeil ">"
-capsule(370, 600, 492, 600, 29, CREAM)
-triangle([(468, 526), (468, 674), (582, 600)], CREAM)
-
-# --------------------------------------------- rechts: Heu-/Strohbuendel
-fan_x, fan_y = 800, 776
-for ang, ln in ((-118, 250), (-100, 285), (-82, 296), (-64, 278), (-46, 238), (-134, 208), (-30, 190)):
-    a = math.radians(ang)
-    ex, ey = fan_x + math.cos(a) * ln, fan_y + math.sin(a) * ln
-    capsule(fan_x, fan_y, ex, ey, 13, HAY, HAY_EDGE, edge_w=4)
-for ang, ln in ((-109, 178), (-73, 190)):
-    a = math.radians(ang)
-    ex, ey = fan_x + math.cos(a) * ln, fan_y + math.sin(a) * ln
-    capsule(fan_x, fan_y, ex, ey, 5, HAY_HI)
-
-# ------------------------------------------------------ "x4" oben mittig
-# "x"
-capsule(392, 236, 470, 314, 17, CREAM)
-capsule(470, 236, 392, 314, 17, CREAM)
-# "4": Diagonale, Querbalken, Senkrechte
-capsule(566, 318, 636, 196, 18, CREAM)
-capsule(556, 318, 682, 318, 18, CREAM)
-capsule(646, 190, 646, 356, 18, CREAM)
+glyph_div(279, 325)
+glyph_four(365, 325)
+glyph_times(653, 325)
+glyph_four(739, 325)
 
 # ------------------------------------------------------------- Downsample
 out = bytearray(W * H * 3)
