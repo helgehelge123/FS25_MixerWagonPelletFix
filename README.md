@@ -44,9 +44,11 @@ adjusted at the top of the script if a DLC update changes the compression.
 > 362 l of hay pellets became ~3,900 l of hay instead of ~1,450 l.
 >
 > The 4.0 was measured in-game across several runs — hay: 1,209 l → 302 l,
-> 571 l → 143 l, 1,120 l → 280 l, 1,143 l → 286 l; straw: 1,029 l → 258 l.
-> Compression is a constant 4.00. With the mod the round trip is neutral:
-> 1,143 l of hay → 286 l of pellets → 1,143 l of hay back in the wagon.
+> 571 l → 143 l, 1,120 l → 280 l, 1,143 l → 286 l, 4,009 l → 1,002 l;
+> straw: 1,029 l → 258 l. Compression is a constant 4.00, and without the
+> mod those 1,002 l of pellets are credited as 1,004 l of hay. With the mod
+> the round trip is neutral: 1,143 l of hay → 286 l of pellets → 1,143 l of
+> hay back in the wagon.
 
 ## Dosing aid
 
