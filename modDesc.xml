@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no" ?>
 <modDesc descVersion="110">
     <author>Helge</author>
-    <version>1.2.0.1</version>
+    <version>1.3.0.0</version>
     <iconFilename>icon.dds</iconFilename>
     <title>
         <en>Mixer Wagon Pellet Fix (Straw Harvest)</en>
@@ -15,7 +15,7 @@ This mod converts pellets back into the original amount while filling a mixer wa
 - straw pellets -> straw (factor ~4)
 - hay pellets -> hay (factor ~4)
 
-The factor 4.0 matches the volumetric compression of pelletizing (liters in / liters out), so a pellet detour into the mixer wagon is exactly neutral - no feed is lost and none is created out of thin air. In addition, self-propelled mixer wagons pick pellets up off the ground at half the usual rate (a 4x factor would otherwise fill the wagon four times as fast as usual) - what is not picked up simply stays in the heap, nothing is lost. Only mixer wagons are touched - selling, bedding and storage of pellets stay unchanged. Works with any mixer wagon (base game and mods). Multiplayer safe; without the Straw Harvest Pack the mod stays inactive.
+The factor 4.0 matches the volumetric compression of pelletizing (liters in / liters out), so a pellet detour into the mixer wagon is exactly neutral - no feed is lost and none is created out of thin air. Picking pellets up off the ground is not slowed down: because of the factor the wagon simply fills four times as fast as it does in loose material. Only mixer wagons are touched - selling, bedding and storage of pellets stay unchanged. Works with any mixer wagon (base game and mods). Multiplayer safe; without the Straw Harvest Pack the mod stays inactive.
 
 All hooks are pcall-guarded: if a game update breaks the conversion, the mod disables itself, logs a single warning and vanilla behavior remains untouched.]]></en>
         <de><![CDATA[Workaround für eine Design-Lücke im Straw Harvest Pack: Stroh-/Heupellets sind ca. 4:1 komprimiert (aus ~4.000 l losem Stroh entstehen ~1.000 l Pellets, die Masse bleibt gleich). Kippt man Pellets in einen Futtermischwagen, zählt das Spiel aber nur die nackten Pellet-Liter 1:1 als Stroh bzw. Heu - rund 75 % des Futterwerts verschwinden stillschweigend.
@@ -25,7 +25,7 @@ Dieser Mod rechnet Pellets beim Befüllen eines Mischwagens in die ursprünglich
 - Strohpellets -> Stroh (Faktor ~4)
 - Heupellets -> Heu (Faktor ~4)
 
-Der Faktor 4,0 entspricht der Volumenkompression des Pelletierens (Liter rein / Liter raus) - der Umweg über Pellets in den Mischwagen ist damit exakt neutral: Es geht kein Futter verloren und es entsteht keines aus dem Nichts. Zusätzlich nehmen selbstfahrende Mischwagen Pellets vom Boden nur mit halber Rate auf (durch den 4x-Faktor füllt sich der Wagen sonst viermal so schnell wie gewohnt) - was nicht aufgenommen wird, bleibt im Haufen liegen, es geht nichts verloren. Es werden nur Mischwagen angefasst - Verkauf, Einstreu und Lagerung von Pellets bleiben unverändert. Funktioniert mit jedem Mischwagen (Basisspiel und Mods). Multiplayertauglich; ohne Straw Harvest Pack bleibt der Mod inaktiv.
+Der Faktor 4,0 entspricht der Volumenkompression des Pelletierens (Liter rein / Liter raus) - der Umweg über Pellets in den Mischwagen ist damit exakt neutral: Es geht kein Futter verloren und es entsteht keines aus dem Nichts. Die Aufnahme vom Boden wird nicht gebremst: Durch den Faktor füllt sich der Wagen im Pellet-Haufen einfach viermal so schnell wie in losem Material. Es werden nur Mischwagen angefasst - Verkauf, Einstreu und Lagerung von Pellets bleiben unverändert. Funktioniert mit jedem Mischwagen (Basisspiel und Mods). Multiplayertauglich; ohne Straw Harvest Pack bleibt der Mod inaktiv.
 
 Alle Hooks sind pcall-gesichert: Bricht ein Spielupdate die Umwandlung, deaktiviert sich der Mod selbst, loggt einmalig eine Warnung und das Vanilla-Verhalten bleibt unberührt.]]></de>
     </description>

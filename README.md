@@ -50,22 +50,30 @@ adjusted at the top of the script if a DLC update changes the compression.
 > the round trip is neutral: 1,143 l of hay → 286 l of pellets → 1,143 l of
 > hay back in the wagon.
 
-## Dosing aid
+## Amounts in, amounts out
 
-Because of the 4x factor a mixer wagon driving into a pellet heap fills four
-times as fast as it would in loose material. So self-propelled mixer wagons
-(Faresin PF226, Kuhn SPW Intense) pick pellets up at **half rate**
-(`PELLET_INTAKE_SPEED`, set 0.25 for exactly the loose-material feel, 1.0 to
-disable). Trailed mixer wagons have no ground pickup at all and are unaffected.
+`addFillUnitFillLevel` is called with `delta * 4` and returns the liters it
+actually accepted; dividing that by 4 gives the pellet liters consumed. Sources
+that honour the return value — pallets, conveyors, fill triggers — are
+therefore drained by exactly the right amount: nothing is lost, nothing is
+created.
 
-This is done by lowering `shovelNode.fillLitersPerSecond` while pellets are
-being picked up — the rate at which the `Shovel` specialization strips material
-off the ground. What is not picked up stays in the heap.
+Ground pickup is the one exception. `Shovel:onUpdateTick` strips the material
+off the ground *before* filling and discards the return value, so when the
+wagon is almost full its last tick can swallow a few liters of pellets — at
+most one tick's worth (about 12 l at 750 l/s).
 
-> Do **not** throttle by returning less from `addFillUnitFillLevel`:
-> `Shovel:onUpdateTick` discards that return value and has already removed the
-> material from the ground, so the difference is destroyed. Measured at 0.5:
-> 143 l of pellets yielded 317 l of hay instead of 572 l.
+Pickup speed is deliberately **not** throttled: with the 4x factor a wagon
+driving into a pellet heap fills four times as fast as it does in loose
+material, and that is simply how it stays. A 0.5 throttle was tried in 1.2.0.0
+and removed again in 1.3.0.0 — it made loading tedious.
+
+> Whatever you do, do **not** throttle by returning less from
+> `addFillUnitFillLevel`: the return value is discarded and the material is
+> already gone from the ground, so the difference is destroyed. Measured at
+> 0.5: 143 l of pellets yielded 317 l of hay instead of 572 l. The only
+> lossless place to slow pickup down is `shovelNode.fillLitersPerSecond`,
+> read before the ground is stripped.
 
 Scope is deliberately narrow:
 
